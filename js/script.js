@@ -123,7 +123,7 @@
     });
   });
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const fields = [...form.querySelectorAll("input, textarea")];
     const isValid = fields.map(showFieldError).every(Boolean);
@@ -133,12 +133,27 @@
       fields.find((field) => field.getAttribute("aria-invalid") === "true").focus();
       return;
     }
-    status.textContent = "Thanks! Your message is validated. This demo form does not send messages yet—please email me directly.";
-    form.reset();
-    fields.forEach((field) => {
-      field.removeAttribute("aria-invalid");
-      document.querySelector(`#${field.name}-error`).textContent = "";
-    });
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    status.textContent = "Sending...";
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) throw new Error("Form submission failed");
+      status.textContent = "Thanks! Your message has been sent.";
+      form.reset();
+      fields.forEach((field) => {
+        field.removeAttribute("aria-invalid");
+        document.querySelector(`#${field.name}-error`).textContent = "";
+      });
+    } catch (error) {
+      status.textContent = "Sorry, your message could not be sent. Please email me directly.";
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 
   document.querySelector("#current-year").textContent = String(new Date().getFullYear());
